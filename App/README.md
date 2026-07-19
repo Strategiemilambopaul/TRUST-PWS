@@ -64,6 +64,19 @@ Formats acceptés :
 
 Exemple : `api/sample_station.csv`
 
+## IoT / Arduino
+
+Page UI : `/iot`
+
+```bash
+python -m uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+```
+
+- `POST /iot/ingest` — JSON T/H/P depuis ESP32  
+- `POST /iot/simulate` — démo sans matériel  
+- Sketch : `arduino/trust_pws_esp32.ino`  
+- Guide : `arduino/README.md`
+
 ## Architecture
 
 - `src/pages` : écrans

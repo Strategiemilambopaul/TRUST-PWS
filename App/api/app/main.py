@@ -6,8 +6,8 @@ from fastapi import FastAPI, File, HTTPException, Query, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 
 from app import config
-from app.schemas import CleanRequest, EvaluateResponse
-from app.services import data_service
+from app.schemas import CleanRequest, EvaluateResponse, IoTBatchIn, IoTReadingIn
+from app.services import data_service, iot_service
 from app.services.evaluate_service import (
     apply_cleaning,
     evaluate_corpus,
@@ -201,3 +201,80 @@ def evaluate_export(
         )
     except FileNotFoundError as e:
         raise HTTPException(404, str(e)) from e
+
+
+# --- IoT / Arduino -----------------------------------------------------------
+
+
+@app.get("/iot/status")
+def iot_status():
+    return iot_service.status()
+
+
+@app.get("/iot/readings")
+def iot_readings(limit: int = Query(80, ge=1, le=2000)):
+    return iot_service.list_readings(limit)
+
+
+@app.post("/iot/ingest")
+def iot_ingest(body: IoTReadingIn):
+    """Point d’entrée principal pour ESP32 / Arduino (JSON T/H/P)."""
+    try:
+        return iot_service.ingest_reading(
+            device_id=body.device_id,
+            temperature=body.temperature,
+            humidity=body.humidity,
+            pressure=body.pressure,
+            timestamp=body.timestamp,
+            station_name=body.station_name,
+        )
+    except ValueError as e:
+        raise HTTPException(400, str(e)) from e
+
+
+@app.get("/iot/ingest")
+def iot_ingest_get(
+    t: Optional[float] = Query(None, description="temperature °C"),
+    h: Optional[float] = Query(None, description="humidity %"),
+    p: Optional[float] = Query(None, description="pressure hPa"),
+    device_id: str = Query("arduino-pws"),
+):
+    """Variante GET simple pour sketches Arduino basiques."""
+    try:
+        return iot_service.ingest_reading(
+            device_id=device_id,
+            temperature=t,
+            humidity=h,
+            pressure=p,
+        )
+    except ValueError as e:
+        raise HTTPException(400, str(e)) from e
+
+
+@app.post("/iot/ingest/batch")
+def iot_ingest_batch(body: IoTBatchIn):
+    if not body.readings:
+        raise HTTPException(400, "Liste readings vide.")
+    try:
+        return iot_service.ingest_batch([r.model_dump() for r in body.readings])
+    except ValueError as e:
+        raise HTTPException(400, str(e)) from e
+
+
+@app.delete("/iot/buffer")
+def iot_clear():
+    return iot_service.clear_buffer()
+
+
+@app.post("/iot/evaluate", response_model=EvaluateResponse)
+def iot_evaluate():
+    try:
+        return iot_service.evaluate_buffer()
+    except ValueError as e:
+        raise HTTPException(400, str(e)) from e
+
+
+@app.post("/iot/simulate")
+def iot_simulate(n: int = Query(30, ge=5, le=200)):
+    """Démo sans matériel : remplit le buffer avec un flux synthétique."""
+    return iot_service.simulate_demo(n=n)

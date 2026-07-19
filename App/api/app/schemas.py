@@ -102,9 +102,22 @@ class ImportPreview(BaseModel):
     error_message: Optional[str] = None
 
 
+class IoTReadingIn(BaseModel):
+    device_id: str = "arduino-pws"
+    station_name: Optional[str] = None
+    temperature: Optional[float] = None
+    humidity: Optional[float] = None
+    pressure: Optional[float] = None
+    timestamp: Optional[str] = None
+
+
+class IoTBatchIn(BaseModel):
+    readings: list[IoTReadingIn] = Field(default_factory=list)
+
+
 class EvaluateResponse(BaseModel):
     evaluation_id: str
-    source: Literal["upload", "corpus"] = "corpus"
+    source: Literal["upload", "corpus", "iot"] = "corpus"
     filename: Optional[str] = None
     summary: DashboardSummary
     series: list[SeriesTrustOut] = Field(default_factory=list)

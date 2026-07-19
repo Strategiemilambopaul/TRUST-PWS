@@ -5,6 +5,8 @@ import type {
   EvaluateResult,
   HistoryItem,
   ImportPreview,
+  IoTReading,
+  IoTStatus,
   Observation,
   PipelineStep,
   SeriesTrust,
@@ -113,5 +115,44 @@ export async function downloadEvaluationExport(
     },
     responseType: 'blob',
   })
+  return data
+}
+
+export async function fetchIoTStatus() {
+  const { data } = await api.get<IoTStatus>('/iot/status')
+  return data
+}
+
+export async function fetchIoTReadings(limit = 80) {
+  const { data } = await api.get<IoTReading[]>('/iot/readings', { params: { limit } })
+  return data
+}
+
+export async function evaluateIoTBuffer() {
+  const { data } = await api.post<EvaluateResult>('/iot/evaluate')
+  return data
+}
+
+export async function clearIoTBuffer() {
+  const { data } = await api.delete<{ cleared: boolean; buffer_size: number }>('/iot/buffer')
+  return data
+}
+
+export async function simulateIoT(n = 30) {
+  const { data } = await api.post<{ accepted: number; buffer_size: number; device_id: string }>(
+    '/iot/simulate',
+    null,
+    { params: { n } },
+  )
+  return data
+}
+
+export async function ingestIoTManual(payload: {
+  device_id: string
+  temperature?: number
+  humidity?: number
+  pressure?: number
+}) {
+  const { data } = await api.post('/iot/ingest', payload)
   return data
 }

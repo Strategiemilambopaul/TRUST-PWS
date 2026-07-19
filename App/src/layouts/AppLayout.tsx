@@ -2,6 +2,7 @@ import { NavLink, Outlet } from 'react-router-dom'
 import {
   Activity,
   AlertTriangle,
+  Cpu,
   Gauge,
   History,
   LayoutDashboard,
@@ -16,6 +17,7 @@ import { useAppStore } from '@/store/appStore'
 const links = [
   { to: '/', label: 'Tableau de bord', icon: LayoutDashboard },
   { to: '/import', label: 'Import', icon: Upload },
+  { to: '/iot', label: 'IoT / Arduino', icon: Cpu },
   { to: '/visualisation', label: 'Visualisation', icon: LineChart },
   { to: '/evaluation', label: 'Évaluation', icon: Workflow },
   { to: '/anomalies', label: 'Anomalies', icon: AlertTriangle },

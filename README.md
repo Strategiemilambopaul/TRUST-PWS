@@ -263,6 +263,36 @@ Fichier d’exemple pour tester l’import : [`App/api/sample_station.csv`](App/
 - **long** : `timestamp, value, phenomenon|variable [, unit, station_id]`
 - **large** : `timestamp, temperature, humidity, pressure`
 
+### 6.4 — Tester en direct avec Arduino / ESP32 (IoT)
+
+Pour une personne qui veut **tester immédiatement** avec un capteur low-cost :
+
+1. Lancer l’API en écoute sur le réseau local :
+
+```powershell
+cd App\api
+.\.venv\Scripts\Activate.ps1
+python -m uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+```
+
+2. Ouvrir l’UI : **http://localhost:5173/iot**
+3. Soit :
+   - flasher le sketch [`App/arduino/trust_pws_esp32.ino`](App/arduino/trust_pws_esp32.ino) (ESP32 + BME280),  
+   - **ou** cliquer **Simuler sans matériel** dans l’UI,
+   - **ou** envoyer une mesure manuelle depuis la page.
+4. Quand le buffer a assez de points → **Évaluer le flux IoT**
+
+Endpoint Arduino :
+
+```http
+POST http://IP_DU_PC:8000/iot/ingest
+Content-Type: application/json
+
+{"device_id":"esp32-salon","temperature":22.5,"humidity":55.0,"pressure":1013.2}
+```
+
+Guide matériel : [`App/arduino/README.md`](App/arduino/README.md)
+
 ---
 
 ## En cas de problème

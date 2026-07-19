@@ -99,7 +99,7 @@ export interface ImportPreview {
 
 export interface EvaluateResult {
   evaluation_id: string
-  source: 'upload' | 'corpus'
+  source: 'upload' | 'corpus' | 'iot'
   filename?: string | null
   summary: DashboardSummary
   series: SeriesTrust[]
@@ -123,6 +123,28 @@ export interface ActiveDataset {
   nRemoved: number
   nObservations: number
   trustMedian: number
+}
+
+export interface IoTStatus {
+  buffer_size: number
+  max_points: number
+  total_received: number
+  last_device_id: string | null
+  last_seen_at: string | null
+  devices: string[]
+  last_reading: Record<string, unknown> | null
+  ready_for_evaluation: boolean
+  min_recommended: number
+}
+
+export interface IoTReading {
+  timestamp: string
+  station_id: string
+  station_name: string
+  variable: string
+  value: number
+  unit: string
+  received_at?: string
 }
 
 export interface TimePoint {
