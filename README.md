@@ -216,26 +216,37 @@ Ne pas confondre :
 
 ## Étape 6 — Lancer le prototype (optionnel)
 
-Prérequis : au minimum les exports de l’**étape 4** dans `notebook/notebook/data/processed/`.
+Prérequis corpus : exports de l’**étape 4** dans `notebook/notebook/data/processed/` (pour le tableau de bord).  
+Pour tester seulement **Import** / **IoT**, vous pouvez démarrer l’API sans le gros corpus.
 
-### 6.1 — API FastAPI
+> **Attention :** l’API doit être lancée depuis `App/api`.  
+> Si vous lancez depuis la racine du dépôt → `ModuleNotFoundError: No module named 'app'`.
 
-**Terminal 1**
+Détails complets : [`App/README.md`](App/README.md)
+
+### 6.1 — API FastAPI (Terminal 1)
+
+**Windows (PowerShell)** — depuis la racine du dépôt :
 
 ```powershell
 cd App\api
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 pip install -r requirements.txt
+
+# Local (UI seule)
 python -m uvicorn app.main:app --reload --port 8000
+
+# IoT / Arduino sur le WiFi (recommandé si ESP32)
+python -m uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
 Vérifier : http://127.0.0.1:8000/health  
-Docs : http://127.0.0.1:8000/docs
+Docs : http://127.0.0.1:8000/docs  
 
-### 6.2 — Interface React
+Le prompt doit indiquer quelque chose comme `( .venv ) PS ...\App\api>`.
 
-**Terminal 2**
+### 6.2 — Interface React (Terminal 2)
 
 ```powershell
 cd App
@@ -248,41 +259,32 @@ Ouvrir : **http://localhost:5173**
 
 ### 6.3 — Ce que vous pouvez faire dans l’UI
 
-| Page | Rôle |
-|---|---|
-| Tableau de bord | Synthèse corpus mémoire |
-| Import | Upload d’une station perso + contrôle de format |
-| Évaluation / Score | QC + confiance (calcul côté API) |
-| Anomalies | Observations signalées |
-| Export | Dataset normalisé (avec option de retirer les suspectes) |
+| Page | Route | Rôle |
+|---|---|---|
+| Tableau de bord | `/` | Synthèse corpus mémoire |
+| Import | `/import` | Upload CSV/JSON + format + évaluation |
+| IoT / Arduino | `/iot` | Flux capteur live ou simulation |
+| Visualisation | `/visualisation` | Séries T/H/P |
+| Évaluation / Score | `/evaluation`, `/score` | Cadre + dimensions de confiance |
+| Anomalies | `/anomalies` | Observations signalées |
+| Historique | `/historique` | Synthèse par station |
 
-Fichier d’exemple pour tester l’import : [`App/api/sample_station.csv`](App/api/sample_station.csv)
+Fichier d’exemple import : [`App/api/sample_station.csv`](App/api/sample_station.csv)
 
-**Format attendu pour un upload :**
+**Format upload :**
 
 - **long** : `timestamp, value, phenomenon|variable [, unit, station_id]`
 - **large** : `timestamp, temperature, humidity, pressure`
 
 ### 6.4 — Tester en direct avec Arduino / ESP32 (IoT)
 
-Pour une personne qui veut **tester immédiatement** avec un capteur low-cost :
-
-1. Lancer l’API en écoute sur le réseau local :
-
-```powershell
-cd App\api
-.\.venv\Scripts\Activate.ps1
-python -m uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
-```
-
-2. Ouvrir l’UI : **http://localhost:5173/iot**
-3. Soit :
-   - flasher le sketch [`App/arduino/trust_pws_esp32.ino`](App/arduino/trust_pws_esp32.ino) (ESP32 + BME280),  
-   - **ou** cliquer **Simuler sans matériel** dans l’UI,
-   - **ou** envoyer une mesure manuelle depuis la page.
-4. Quand le buffer a assez de points → **Évaluer le flux IoT**
-
-Endpoint Arduino :
+1. API depuis **`App\api`** avec `--host 0.0.0.0` (voir 6.1)
+2. UI : **http://localhost:5173/iot**
+3. Au choix :
+   - sketch [`App/arduino/trust_pws_esp32.ino`](App/arduino/trust_pws_esp32.ino) (ESP32 + BME280),
+   - bouton **Simuler sans matériel**,
+   - envoi manuel depuis la page
+4. Puis **Évaluer le flux IoT**
 
 ```http
 POST http://IP_DU_PC:8000/iot/ingest
@@ -291,7 +293,8 @@ Content-Type: application/json
 {"device_id":"esp32-salon","temperature":22.5,"humidity":55.0,"pressure":1013.2}
 ```
 
-Guide matériel : [`App/arduino/README.md`](App/arduino/README.md)
+Dans le sketch, `API_HOST` = IP LAN du PC (`ipconfig`), **pas** `127.0.0.1`.  
+Guide : [`App/arduino/README.md`](App/arduino/README.md)
 
 ---
 
@@ -301,9 +304,11 @@ Guide matériel : [`App/arduino/README.md`](App/arduino/README.md)
 |---|---|
 | `FileNotFoundError` sur un CSV processed | Relancer les étapes 1 → 4 dans l’ordre |
 | Acquisition très lente / coupures | Reprendre avec `download_opensensemap_thp.py` |
-| API : `No module named fastapi` | Activer le `.venv` de `App/api` puis `pip install -r requirements.txt` |
-| UI vide / erreurs réseau | Vérifier que l’API tourne sur le port **8000** |
-| Notebook 0 « saute » une étape | Les sorties existent déjà ; mettre `FORCE_*=True` dans le notebook pour forcer |
+| `No module named 'app'` | Vous n’êtes pas dans `App/api` → `cd App\api` puis relancer uvicorn |
+| `No module named 'fastapi'` | Activer `.venv` de `App/api` puis `pip install -r requirements.txt` |
+| UI vide / erreurs réseau | Vérifier http://127.0.0.1:8000/health (API démarrée) |
+| ESP32 n’atteint pas l’API | Utiliser `--host 0.0.0.0` + IP LAN du PC dans le sketch |
+| Notebook 0 « saute » une étape | Sorties déjà présentes ; `FORCE_*=True` pour forcer |
 
 ---
 
