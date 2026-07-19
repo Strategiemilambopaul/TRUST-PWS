@@ -1,0 +1,700 @@
+﻿\chapter{Résultats, discussion et limites de l'étude}
+\label{chap:resultats}
+
+Ce chapitre confronte le cadre méthodologique du Chapitre~\ref{chap:methodo}
+aux données réellement collectées. Nous y lisons les exports du pipeline sous
+l'angle des questions $Q_1$--$Q_3$ et des hypothèses $H_1$--$H_3$ formulées en
+introduction. L'enjeu n'est pas d'accumuler des tableaux, mais de montrer ce
+que le protocole permet --- et ce qu'il interdit --- de conclure.
+
+La campagne analytique porte sur la période du 15~juin au 15~juillet~2026
+(UTC). Après sélection des stations outdoor actives et passage du contrôle
+qualité, le corpus compte 38~stations et 2\,445\,899~observations de
+température, d'humidité relative et de pression. Aucune référence
+métrologique colocalisée n'étant disponible, nous n'affichons ni MAE, ni RMSE,
+ni MAPE, ni $R^2$ comme preuves d'exactitude. Le refus est méthodologique :
+ces indicateurs mesureraient un écart à une source non équivalente, non une
+erreur de mesure démontrée.
+
+\section{Fil de lecture du chapitre}
+\label{sec:fil}
+
+Le travail vise un cadre reproductible d'évaluation de la confiance pour des
+données de stations personnelles low-cost. L'application empirique s'appuie sur
+des stations openSenseMap qui exposent simultanément température, humidité et
+pression.
+
+Trois niveaux d'analyse sont maintenus distincts. Au niveau de l'observation,
+nous examinons drapeaux et statut QC. Au niveau de la série (station et
+variable), nous calculons dimensions et score de confiance. Au niveau de
+l'usage, nous attribuons une classe \textit{fit for purpose}, puis nous
+agrégeons cette classe à la station selon la règle du minimum.
+
+Les résultats répondent à trois questions. ($Q_1$)~Le corpus est-il assez dense
+et cohérent pour un diagnostic de confiance~? ($Q_2$)~Le découpage en dimensions
+sépare-t-il des profils de séries~? ($Q_3$)~La classification d'usage
+apporte-t-elle une information plus restrictive qu'un score global unique~?
+
+Trois hypothèses orientent l'interprétation. ($H_1$)~Une part notable des
+observations sera marquée suspecte, sans invalider l'ensemble du corpus.
+($H_2$)~Les variables n'auront pas le même profil ; l'humidité sera plus
+sensible aux problèmes de stabilité. ($H_3$)~Un score médian élevé pourra
+coexister avec une classe d'usage modeste dès qu'une seule variable échoue.
+
+%==============================================================================
+\section{Synthèse du corpus}
+\label{sec:corpus}
+
+\subsection{Faits observés}
+
+Le Tableau~\ref{tab:corpus} résume le corpus retenu après sélection des stations
+et application du contrôle qualité.
+
+\begin{table}[H]
+\centering
+\caption{Synthèse du corpus empirique (exports du pipeline).}
+\label{tab:corpus}
+\begin{tabular}{lc}
+\toprule
+Indicateur & Valeur \\
+\midrule
+Nombre de stations & 38 \\
+Nombre de séries (station et variable) & 114 \\
+Variables & température, humidité, pression \\
+Observations après QC & 2\,445\,899 \\
+Complétude médiane & 93,88\,\% \\
+Score de confiance médian (séries) & 0,965 \\
+Intervalle interquartile du score & 0,907 à 0,987 \\
+Contrôle spatial & désactivé \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Les 114 séries correspondent à $38 \times 3$ couples station--variable. Avec une
+complétude médiane proche de 94\,\%, la moitié des séries conserve, sur la
+période, une couverture temporelle élevée une fois l'intervalle médian
+d'échantillonnage pris comme référence. Le score de confiance, lui, n'est pas
+symétrique : la médiane (0,965) dépasse la moyenne (0,923), l'écart-type vaut
+0,100 et le minimum s'établit à 0,575 (Tableau~\ref{tab:trust_desc}). Autrement
+dit, un noyau de séries très bien notées coexiste avec une traîne de séries
+nettement plus faibles.
+
+\begin{table}[H]
+\centering
+\caption{Distribution du score de confiance au niveau des séries ($n=114$).}
+\label{tab:trust_desc}
+\begin{tabular}{lcccccc}
+\toprule
+ & $n$ & Moyenne & Écart-type & Min & Médiane & Max \\
+\midrule
+\texttt{trust\_score} & 114 & 0,923 & 0,100 & 0,575 & 0,965 & 0,995 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+La Figure~\ref{fig:dist_trust} visualise cette concentration dans le haut de
+l'échelle $[0,1]$, ainsi que la dispersion par variable.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\textwidth]{fig1_distribution_trust_scores.png}
+\caption{Distribution des scores de confiance au niveau des séries (gauche) et
+par variable (droite).}
+\label{fig:dist_trust}
+\end{figure}
+
+\subsection{Interprétation}
+
+Ces ordres de grandeur ne disent pas que les données sont exactes au sens
+métrologique. Ils disent que, \textit{sous les règles explicites du cadre}, la
+majorité des séries combine disponibilité correcte, plausibilité physique élevée
+et continuité temporelle satisfaisante. L'écart médiane--moyenne rappelle toutefois
+qu'un sous-ensemble dégradé tire la moyenne vers le bas. Un seul indicateur
+central ne suffit donc pas à décrire le corpus.
+
+Du point de vue de $Q_1$, le matériau est suffisant pour exercer le protocole :
+volume important, trois variables homogènes, couverture globalement dense. Reste
+à localiser les dégradations.
+
+%==============================================================================
+\section{Contrôle qualité au niveau observation}
+\label{sec:qc}
+
+\subsection{Répartition des statuts \texttt{valide}, \texttt{a\_verifier}, \texttt{suspecte}}
+
+Sur les 2\,445\,899 observations soumises au QC
+(Tableau~\ref{tab:qc_status} et Figure~\ref{fig:qc_status}),
+1\,859\,834~sont classées \texttt{valide} (76,0\,\%),
+14\,307~\texttt{a\_verifier} (0,6\,\%) et 571\,758~\texttt{suspecte}
+(23,4\,\%).
+
+\begin{table}[H]
+\centering
+\caption{Statuts QC au niveau observation.}
+\label{tab:qc_status}
+\begin{tabular}{lrr}
+\toprule
+Statut & Observations & Proportion \\
+\midrule
+\texttt{valide} & 1\,859\,834 & 76,04\,\% \\
+\texttt{a\_verifier} & 14\,307 & 0,58\,\% \\
+\texttt{suspecte} & 571\,758 & 23,38\,\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\textwidth]{fig2b_qc_status_global.png}
+\caption{Répartition globale des statuts de contrôle qualité.}
+\label{fig:qc_status}
+\end{figure}
+
+La classe \texttt{a\_verifier} est marginale. En revanche, près d'un quart des
+observations porte au moins un drapeau majeur --- plausibilité, valeur figée,
+saut temporel ou anomalie statistique robuste. $H_1$ trouve ici un appui net :
+le cadre isole une masse non négligeable d'observations douteuses sans rejeter
+l'ensemble du jeu. Un usage direct des brutes, sans filtrage, serait donc
+difficilement défendable.
+
+\subsection{Différences entre variables}
+
+Le croisement variable $\times$ statut (Tableau~\ref{tab:qc_var} et
+Figure~\ref{fig:qc_var}) nuance le tableau global. La température concentre
+davantage d'observations \texttt{valide} (681\,836) que l'humidité (584\,175) ou
+la pression (593\,823), pour des volumes totaux proches. Humidité et pression
+regroupent chacune environ 227\,000 observations \texttt{suspecte}, contre
+environ 117\,000 pour la température.
+
+\begin{table}[H]
+\centering
+\caption{Effectifs des statuts QC par variable.}
+\label{tab:qc_var}
+\begin{tabular}{lrrr}
+\toprule
+Variable & \texttt{valide} & \texttt{a\_verifier} & \texttt{suspecte} \\
+\midrule
+Humidité & 584\,175 & 4\,324 & 226\,637 \\
+Pression & 593\,823 & 4\,074 & 227\,957 \\
+Température & 681\,836 & 5\,909 & 117\,164 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\textwidth]{fig2c_qc_status_par_variable.png}
+\caption{Statuts QC par variable : proportions empilées et effectifs.}
+\label{fig:qc_var}
+\end{figure}
+
+Les taux médians d'anomalies au niveau série (Tableau~\ref{tab:qc_rates})
+identifient le mécanisme dominant. Pour l'humidité, la médiane du taux de
+valeurs figées (\texttt{stuck}) atteint 0,126, contre 0 pour la température et
+la pression. Les sauts temporels restent faibles (médianes voisines de 0,01).
+Les anomalies physiques et statistiques médianes sont nulles. Le problème
+principal n'est donc pas une explosion de valeurs hors plage, mais une
+\textbf{stabilité dégradée} sur une partie des séries d'humidité.
+
+\begin{table}[H]
+\centering
+\caption{Indicateurs QC médians par variable (niveau série).}
+\label{tab:qc_rates}
+\begin{tabular}{lcccccc}
+\toprule
+Variable & Complétude & Physique & Figé & Saut & Valide & Suspecte \\
+\midrule
+Humidité & 0,938 & 0,000 & 0,126 & 0,013 & 0,850 & 0,143 \\
+Pression & 0,939 & 0,000 & 0,000 & 0,010 & 0,978 & 0,018 \\
+Température & 0,939 & 0,000 & 0,000 & 0,013 & 0,973 & 0,018 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.92\textwidth]{fig7_taux_anomalies_par_variable.png}
+\caption{Médianes des taux d'anomalies QC par variable.}
+\label{fig:anom_var}
+\end{figure}
+
+\subsection{Lecture scientifique}
+
+Le statut QC répond à une question précise : l'observation est-elle compatible
+avec les règles de cohérence interne retenues~? Il ne répond pas à celle de
+l'exactitude par rapport à une référence étalonnée. Une observation
+\texttt{suspecte} est une observation à traiter avec prudence, non une erreur
+prouvée.
+
+L'asymétrie humidité / température--pression est compatible avec le
+comportement souvent rapporté des capteurs low-cost de type BME ou HTU en
+environnement réel --- dérives, saturation, mauvaise ventilation. Les données
+ne permettent pourtant pas de trancher entre cause matérielle, installation ou
+microclimat. Cette limite causale revient en Section~\ref{sec:limites}.
+
+%==============================================================================
+\section{Scores dimensionnels et score global de confiance}
+\label{sec:confiance}
+
+\subsection{Rappel de construction}
+
+Pour chaque série, six dimensions dans $[0,1]$ sont dérivées des taux QC :
+complétude, plausibilité physique, stabilité, anomalies statistiques,
+continuité, métadonnées. Le score global est une moyenne pondérée renormalisée
+sur les dimensions disponibles. Poids retenus : complétude~0,20 ; physique~0,25 ;
+stabilité~0,20 ; statistique~0,15 ; continuité~0,10 ; métadonnées~0,05. La
+dimension spatiale est absente, le contrôle de voisinage ayant été désactivé.
+
+\subsection{Profils observés par variable}
+
+Les médianes des dimensions (Tableau~\ref{tab:dims} et
+Figure~\ref{fig:profil_dim}) dessinent un profil net. Plausibilité physique,
+qualité statistique et métadonnées restent excellentes pour les trois variables,
+avec des médianes proches de~1. La continuité est très élevée (environ 0,997) et
+la complétude se situe autour de 0,94. La stabilité, en revanche, sépare
+l'humidité (médiane 0,929) de la pression (0,993) et de la température (0,992).
+
+Le score médian suit le même ordre : température (0,976), pression (0,969), puis
+humidité (0,955).
+
+\begin{table}[H]
+\centering
+\caption{Médianes des dimensions de confiance et du score global par variable.}
+\label{tab:dims}
+\begin{tabular}{lccccccc}
+\toprule
+Variable & Compl. & Phys. & Stab. & Stat. & Cont. & Métad. & Score \\
+\midrule
+Humidité & 0,938 & 1,000 & 0,929 & 1,000 & 0,997 & 1,000 & 0,955 \\
+Pression & 0,939 & 1,000 & 0,993 & 1,000 & 0,997 & 1,000 & 0,969 \\
+Température & 0,939 & 1,000 & 0,992 & 1,000 & 0,997 & 1,000 & 0,976 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.92\textwidth]{fig2_profil_dimensions.png}
+\caption{Profil moyen des dimensions de confiance par variable.}
+\label{fig:profil_dim}
+\end{figure}
+
+\subsection{Lien entre complétude et confiance}
+
+La Figure~\ref{fig:comp_trust} confronte taux de complétude et score. Le
+coefficient de Spearman vaut $\rho = 0,59$ ($n=114$). La relation est positive
+et modérée : la disponibilité contribue au score, mais ne le détermine pas. Une
+série relativement complète peut être pénalisée par la stabilité ; à l'inverse,
+une complétude imparfaite n'interdit pas un score élevé si les autres dimensions
+restent saines. Cette dissociation justifie, a posteriori, de ne pas réduire la
+confiance à un simple taux de remplissage.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.72\textwidth]{fig4_completude_vs_confiance.png}
+\caption{Relation entre taux de complétude et score de confiance, par variable.}
+\label{fig:comp_trust}
+\end{figure}
+
+\subsection{Retour sur $Q_2$ et $H_2$}
+
+Le cadre dimensionnel remplit sa fonction différenciante. Il ne se contente pas
+d'un taux global d'« anomalies » : il montre \textit{où} la confiance se
+dégrade. Ici, la dégradation dominante concerne la stabilité de l'humidité, ce
+qui confirme $H_2$. Pour un usage scientifique prudent, cette lecture est plus
+utile qu'un indicateur unique opaque.
+
+%==============================================================================
+\section{Classification \textit{fit for purpose}}
+\label{sec:ffp}
+
+\subsection{Résultats au niveau des séries}
+
+La classification d'usage attribue à chaque série la classe la plus exigeante
+dont tous les seuils sont respectés ; à défaut, la série est jugée
+\texttt{non\_recommande}. Sur 114~séries (Tableau~\ref{tab:ffp_series} et
+Figure~\ref{fig:ffp_effectifs}), 55~(48,2\,\%) relèvent de
+\texttt{usage\_scientifique\_restreint}, 16~(14,0\,\%) de
+\texttt{comparaison\_relative}, 9~(7,9\,\%) de \texttt{suivi\_tendances},
+21~(18,4\,\%) d'\texttt{exploratoire} et 13~(11,4\,\%) de
+\texttt{non\_recommande}.
+
+\begin{table}[H]
+\centering
+\caption{Répartition des classes \textit{fit for purpose} (séries).}
+\label{tab:ffp_series}
+\begin{tabular}{lrr}
+\toprule
+Classe & $n$ séries & Proportion \\
+\midrule
+Usage scientifique restreint & 55 & 48,2\,\% \\
+Comparaison relative & 16 & 14,0\,\% \\
+Suivi de tendances & 9 & 7,9\,\% \\
+Exploratoire & 21 & 18,4\,\% \\
+Non recommandé & 13 & 11,4\,\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\textwidth]{fig3a_fit_for_purpose_effectifs.png}
+\caption{Effectifs des classes \textit{fit for purpose} : séries et stations.}
+\label{fig:ffp_effectifs}
+\end{figure}
+
+Près de la moitié des séries atteint la classe la plus exigeante du barème. Dans
+le même temps, près de 30\,\% restent cantonnées aux usages exploratoires ou non
+recommandés. Le cadre n'absout pas le corpus : il hiérarchise des usages
+possibles.
+
+\subsection{Différences par variable}
+
+Le Tableau~\ref{tab:ffp_var} et la Figure~\ref{fig:ffp_var} montrent que la
+température est la plus souvent classée en usage scientifique restreint
+(21/38, soit 55\,\%), suivie de la pression (19/38, 50\,\%) puis de l'humidité
+(15/38, 39\,\%). L'humidité alimente surtout la classe exploratoire (12~séries).
+La pression concentre davantage de séries \texttt{non\_recommande} (8) que la
+température (4) ou l'humidité (1). Les échecs d'usage pour la pression ne se
+réduisent donc pas au seul phénomène des valeurs figées ; d'autres dimensions,
+notamment physiques, y interviennent.
+
+\begin{table}[H]
+\centering
+\caption{Classes FFP par variable (effectifs de séries).}
+\label{tab:ffp_var}
+\begin{tabular}{lccccc}
+\toprule
+Variable & Sci. restreint & Comp. relative & Tendances & Exploratoire & Non recomm. \\
+\midrule
+Humidité & 15 & 9 & 1 & 12 & 1 \\
+Pression & 19 & 3 & 4 & 4 & 8 \\
+Température & 21 & 4 & 4 & 5 & 4 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\textwidth]{fig3b_ffp_par_variable.png}
+\caption{Répartition des classes FFP par variable.}
+\label{fig:ffp_var}
+\end{figure}
+
+\subsection{Score versus classe}
+
+La Figure~\ref{fig:score_classe} indique que les scores tendent à décroître
+lorsque l'on descend dans la hiérarchie d'usage, sans chevauchement total. Une
+série peut conserver un score encore élevé tout en échouant à un seuil dur ---
+exigence de stabilité ou de plausibilité pour la classe scientifique, par
+exemple. C'est précisément l'intérêt de la couche FFP par rapport au seul
+\texttt{trust\_score}.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\textwidth]{fig3c_score_par_classe_ffp.png}
+\caption{Score de confiance selon la classe FFP (boxplot et dispersion).}
+\label{fig:score_classe}
+\end{figure}
+
+Le profil dimensionnel moyen par classe (Figure~\ref{fig:profil_ffp} et
+Tableau~\ref{tab:profil_ffp}) confirme le mécanisme. Les séries
+\texttt{usage\_scientifique\_restreint} présentent des moyennes élevées sur
+toutes les dimensions. Les séries \texttt{non\_recommande} se distinguent
+surtout par un effondrement de la dimension physique moyenne (0,23). La classe
+\texttt{exploratoire} est marquée par une stabilité moyenne dégradée (0,70).
+Deux voies d'échec se dessinent ainsi : l'une plutôt physique, l'autre plutôt
+liée à la stabilité.
+
+\begin{table}[H]
+\centering
+\caption{Profil dimensionnel moyen par classe FFP.}
+\label{tab:profil_ffp}
+\begin{tabular}{lcccccc}
+\toprule
+Classe & Compl. & Phys. & Stab. & Stat. & Cont. & Métad. \\
+\midrule
+Usage sci. restreint & 0,950 & 0,999 & 0,988 & 1,000 & 0,996 & 1,000 \\
+Comparaison relative & 0,833 & 0,996 & 0,948 & 1,000 & 0,992 & 1,000 \\
+Suivi tendances & 0,736 & 0,965 & 0,983 & 0,962 & 0,993 & 1,000 \\
+Exploratoire & 0,799 & 0,965 & 0,702 & 0,973 & 0,977 & 1,000 \\
+Non recommandé & 0,741 & 0,231 & 0,776 & 0,979 & 0,960 & 1,000 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\textwidth]{fig6_profil_dimensions_par_classe.png}
+\caption{Profil moyen des dimensions de confiance par classe FFP.}
+\label{fig:profil_ffp}
+\end{figure}
+
+La Figure~\ref{fig:stab_phys} situe les séries dans le plan stabilité--plausibilité.
+Les seuils associés à l'usage scientifique restreint (plausibilité
+$\geq 0,97$, stabilité $\geq 0,90$) séparent une partie du nuage ; les séries
+\texttt{non\_recommande} occupent surtout la zone de plausibilité dégradée.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.78\textwidth]{fig8_stabilite_vs_physique_ffp.png}
+\caption{Stabilité et plausibilité physique selon la classe FFP.}
+\label{fig:stab_phys}
+\end{figure}
+
+\subsection{Agrégation au niveau station et règle du minimum}
+
+Au niveau station, la classe retenue est la plus restrictive parmi les trois
+variables. La distribution devient alors nettement plus sévère
+(Tableau~\ref{tab:ffp_stations}) : seulement 10~stations sur~38 (26\,\%) restent
+en usage scientifique restreint, tandis que 10~(26\,\%) sont
+\texttt{non\_recommande} et 9~(24\,\%) exploratoires.
+
+\begin{table}[H]
+\centering
+\caption{Classes FFP au niveau station (règle de la classe la plus restrictive).}
+\label{tab:ffp_stations}
+\begin{tabular}{lrr}
+\toprule
+Classe station & $n$ & Proportion \\
+\midrule
+Usage scientifique restreint & 10 & 26,3\,\% \\
+Comparaison relative & 7 & 18,4\,\% \\
+Suivi de tendances & 2 & 5,3\,\% \\
+Exploratoire & 9 & 23,7\,\% \\
+Non recommandé & 10 & 26,3\,\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Ce décalage série/station constitue un résultat central du mémoire. Il confirme
+$H_3$. Une station peut afficher un score médian très élevé tout en étant
+classée exploratoire, dès qu'une variable échoue. Les cas \textit{Feinstaub
+Balkon}, \textit{Sportplatz Härtensdorf}, \textit{Kieseläcker} ou
+\textit{emp-wetter} l'illustrent : scores médians compris entre 0,98 et 0,99,
+classe station exploratoire, parce que l'humidité --- parfois la pression ---
+présente une stabilité insuffisante alors que les autres variables restent
+excellentes (Tableau~\ref{tab:diagnostic}).
+
+\begin{table}[H]
+\centering
+\caption{Exemple de dissociation score médian élevé / classe station restrictive.}
+\label{tab:diagnostic}
+\begin{tabular}{llccc}
+\toprule
+Station & Variable & Score & Classe série & Classe station \\
+\midrule
+Feinstaub Balkon & humidité & 0,919 & exploratoire & exploratoire \\
+Feinstaub Balkon & pression & 0,993 & usage sci. restreint & exploratoire \\
+Feinstaub Balkon & température & 0,995 & usage sci. restreint & exploratoire \\
+Sportplatz Härtensdorf & humidité & 0,895 & exploratoire & exploratoire \\
+Sportplatz Härtensdorf & pression & 0,992 & usage sci. restreint & exploratoire \\
+Sportplatz Härtensdorf & température & 0,994 & usage sci. restreint & exploratoire \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Les Figures~\ref{fig:carte_score} et~\ref{fig:carte_ffp} situent les stations
+selon le score médian et selon la classe FFP. Elles ne prétendent pas à une
+analyse spatiale formelle --- le QC spatial est désactivé --- ; elles servent à
+visualiser la diversité des profils dans la zone couverte.
+
+\begin{figure}[H]
+\centering
+\begin{subfigure}{0.48\textwidth}
+\includegraphics[width=\textwidth]{fig5_carte_stations_confiance.png}
+\caption{Score médian.}
+\label{fig:carte_score}
+\end{subfigure}
+\hfill
+\begin{subfigure}{0.48\textwidth}
+\includegraphics[width=\textwidth]{fig5b_carte_stations_ffp.png}
+\caption{Classe FFP station.}
+\label{fig:carte_ffp}
+\end{subfigure}
+\caption{Répartition spatiale des stations selon la confiance et la classe d'usage.}
+\end{figure}
+
+\subsection{Réponse à $Q_3$}
+
+La couche \textit{fit for purpose} porte une information que le score seul ne
+contient pas. Elle transforme un continuum $[0,1]$ en recommandation d'usage
+explicite. L'agrégation station impose ensuite une prudence systémique : pour un
+usage multi-variable, la qualité de la « pire » série devient le goulot
+d'étranglement. Cette propriété convient à un cadre orienté décision. Elle
+reste, par construction, conservatrice --- et c'est précisément ce que $H_3$
+prédisait.
+
+%==============================================================================
+\section{Discussion}
+\label{sec:discussion}
+
+\subsection{Retour sur les questions de recherche}
+
+Sur $Q_1$, le corpus openSenseMap retenu est exploitable pour un diagnostic de
+confiance : volume important, trois variables alignées, complétude médiane
+élevée. Le taux de 23\,\% d'observations suspectes montre pourtant qu'un usage
+naïf des brutes serait imprudent. Le cadre répond donc à un besoin réel de
+filtrage et de documentation des preuves de qualité.
+
+Sur $Q_2$, les dimensions séparent clairement les profils. L'humidité apparaît
+comme la variable la plus contrainte par la stabilité ; la température offre,
+dans ce corpus, le meilleur compromis entre disponibilité et confiance. Cette
+différenciation justifie l'architecture multi-dimensionnelle face à un score
+unique non décomposable.
+
+Sur $Q_3$, la classification FFP et la règle du minimum au niveau station
+produisent des recommandations plus restrictives que la seule médiane des
+scores. Six stations conservent un score médian $\geq 0,95$ tout en restant
+exploratoires ou non recommandées. Le cadre évite ainsi l'illusion d'une station
+« globalement excellente » masquant une variable défaillante.
+
+\subsection{Apports scientifiques}
+
+Trois apports peuvent être affirmés sans surinterprétation. Premier apport : la
+séparation explicite entre preuves QC (observation), score de confiance (série)
+et recommandation d'usage (FFP). Deuxième apport : la reproductibilité
+opérationnelle du cadre --- paramètres exportés, pipeline documenté, tables et
+figures reprises ici. Troisième apport : la mise en évidence empirique d'un
+goulot d'étranglement variable, principalement l'humidité via les valeurs
+figées, dans un corpus PWS réel.
+
+Ces apports concernent une confiance \textit{relative et contextuelle}. Ils ne
+portent pas sur l'exactitude absolue.
+
+\subsection{Confrontation avec la littérature}
+
+Les résultats rejoignent plusieurs thèses établies. Teh et~al. rappellent que la
+qualité des données capteurs conditionne l'utilité des applications IoT
+\cite{teh2020sensor} ; le taux de 23\,\% d'observations suspectes observé ici
+donne à ce constat une traduction concrète sur un corpus citoyen. De~Vos et~al.
+montrent qu'un QC dédié aux PWS crowdsourcées est nécessaire avant un usage
+opérationnel \cite{devos2019qc}. Notre couche de drapeaux et de statuts
+s'inscrit dans cette logique, même si les variables et le barème diffèrent :
+ici T/H/P et confiance relative, plutôt qu'un focus pluie. Dabrowski et~al.
+insistent sur des contrôles temporels structurés en monitoring météorologique
+\cite{dabrowski2022qc} ; la place accordée aux valeurs figées et aux sauts dans
+notre protocole répond à cette exigence de cohérence dynamique.
+
+Les travaux microclimatiques et prédictifs
+\cite{moon2017microclimate,chithrakumar2023microclimate,yu2021lstm} confirment
+l'intérêt des observations locales, tout en dépendant, en amont, de séries
+exploitables. Notre contribution se situe avant la prévision : elle documente la
+confiance et l'aptitude à l'usage.
+
+Une divergence avec une partie de la littérature métrologique doit être
+assumée. Sans colocalisation, nous n'avançons ni biais en °C ni RMSE. Les
+études de calibration PWS--référence ne sont pas contredites ; elles
+interviennent à une autre étape, en aval d'une confiance déjà documentée.
+
+\subsection{Forces et choix assumés}
+
+Le cadre gagne en clarté par la traçabilité des rejets, doublons et drapeaux,
+ainsi que par la décomposition du score en dimensions interprétables. Les
+seuils d'usage sont explicites et exportés. Le protocole tient un volume de
+l'ordre de $2,4 \times 10^6$ observations de façon reproductible, ce qui dépasse
+le stade du simple prototype illustratif.
+
+Le choix de la règle du minimum au niveau station mérite d'être défendu. On
+pourrait lui préférer une médiane ou une moyenne des classes. Une telle
+agrégation adoucirait le verdict station, au prix d'une perte de lisibilité pour
+l'utilisateur multi-variable : une humidité défaillante resterait masquée par
+deux séries excellentes. Nous avons privilégié la prudence, cohérente avec
+l'objectif de limiter les usages abusifs.
+
+\subsection{Menaces à la validité}
+
+Plusieurs menaces limitent la portée des conclusions. Sur le plan du construit,
+le score mesure une confiance opérationnelle définie par le cadre, non une
+vérité terrain ; le risque est de surinterpréter un score élevé comme une
+exactitude. Sur le plan interne, drapeaux et seuils dépendent d'hyperparamètres
+(durée minimale figée, facteur MAD, plages physiques) : d'autres réglages
+modifieraient proportions suspectes et classes FFP. Sur le plan externe, le
+corpus est limité à 38~stations outdoor, une zone principalement germanophone et
+une période estivale d'un mois ; la généralisation à d'autres climats, saisons
+ou plateformes n'est pas établie. Enfin, la corrélation de Spearman entre
+complétude et score ($\rho=0,59$) décrit une association, non un lien causal ;
+de même, la surreprésentation des valeurs figées en humidité n'identifie pas à
+elle seule la cause matérielle.
+
+%==============================================================================
+\section{Limites de l'étude}
+\label{sec:limites}
+
+\subsection{Limites liées aux données}
+
+Les mesures proviennent d'une plateforme citoyenne. Conditions d'installation,
+entretien des capteurs, exposition réelle et interventions éventuelles de
+l'hôte restent largement inconnus. Les métadonnées \texttt{lastMeasurement} de
+l'API se sont révélées partiellement non fiables lors de l'acquisition ; le
+protocole s'appuie donc sur les séries téléchargées, non sur ces champs.
+
+La période d'un mois, en été, ne capture ni les régimes hivernaux ni les
+épisodes extrêmes prolongés. Trente-huit stations restent modestes au regard de
+l'ensemble du réseau openSenseMap.
+
+\subsection{Limites du construit « confiance »}
+
+Le cadre suppose que des règles de cohérence interne --- plages physiques,
+continuité, stabilité, robustesse statistique --- permettent d'approcher la
+confiance d'usage. L'hypothèse est raisonnable, mais incomplète. Une série peut
+être internement cohérente et néanmoins biaisée : abri mal ventilé, capteur
+exposé au rayonnement, dérive lente non détectée par les drapeaux retenus. La
+confiance documentée ici n'élimine pas ce risque ; elle le circonscrit.
+
+\subsection{Limites méthodologiques et métriques}
+
+Quatre limites méthodologiques structurantes doivent être rappelées : absence de
+référence colocalisée ; contrôle spatial désactivé ; seuils FFP et poids
+dimensionnels choisis a priori, avec une analyse de sensibilité seulement
+partielle dans le notebook~3 et non consolidée dans les exports principaux
+exploités ici ; agrégation station par minimum, volontairement conservatrice.
+
+Les taux d'anomalies et dimensions dérivées quantifient la conformité aux règles
+du cadre. Ils ne remplacent pas des métriques d'erreur de mesure. Précision,
+rappel ou F1 n'ont pas été calculés : aucune vérité terrain labellisée
+observation par observation n'était disponible.
+
+\subsection{Impact sur les conclusions}
+
+Les conclusions du chapitre restent valides en tant qu'évaluation
+\textbf{relative} de confiance et d'aptitude à l'usage dans le corpus étudié.
+Elles ne permettent pas de classer les stations selon leur exactitude absolue,
+ni d'extrapoler sans réserve à d'autres réseaux ou saisons.
+
+%==============================================================================
+\section{Perspectives}
+\label{sec:perspectives}
+
+Plusieurs prolongements découlent directement des limites précédentes. Une
+validation externe, par colocalisation d'un sous-ensemble de stations avec une
+référence professionnelle, permettrait d'estimer biais, RMSE et degrés de
+confiance calibrés --- indicateurs absents ici pour de bonnes raisons, mais
+nécessaires à l'étape suivante. Une analyse de sensibilité factorielle des poids
+et seuils FFP préciserait la stabilité des classements (corrélations de rang,
+taux de reclassement). Le QC spatial pourrait être réactivé lorsque la densité
+locale le permet. Une extension temporelle et géographique --- année complète,
+autres régions climatiques --- testerait la robustesse externe du cadre. Enfin,
+l'enrichissement des métadonnées d'installation (type d'abri, hauteur,
+exposition) ouvrirait la voie à des hypothèses causales plus précises sur les
+valeurs figées d'humidité.
+
+Sur le plan scientifique, le travail ouvre surtout une voie de documentation
+reproductible de la confiance pour les PWS, utilisable comme étape préalable à
+toute fusion de données citoyennes dans un usage analytique plus exigeant.
+
+%==============================================================================
+\section{Synthèse du chapitre}
+\label{sec:synthese_ch3}
+
+Sur un corpus de 38~stations et 2\,445\,899~observations, le cadre reproductible
+proposé a permis de documenter un taux de 23,4\,\% d'observations suspectes au
+QC ; d'obtenir un score de confiance médian de 0,965 au niveau des séries, avec
+une dégradation spécifique de la stabilité pour l'humidité ; de classer 48\,\%
+des séries en usage scientifique restreint, mais seulement 26\,\% des stations
+après application de la règle du minimum ; et de montrer qu'un score médian
+élevé n'implique pas une recommandation d'usage élevée.
+
+Ces résultats répondent aux objectifs d'évaluation de la confiance dans des
+données PWS low-cost, sous réserve des limites déjà discutées. Ils nourrissent
+directement la conclusion générale du mémoire.
