@@ -1,0 +1,62 @@
+# --- Datasets (à produire pas à pas via le pipeline) ---
+notebook/notebook/data/raw/**
+notebook/notebook/data/processed/**
+notebook/notebook/data/readable/**
+notebook/notebook/data/metadata/**
+!notebook/notebook/data/**/.gitkeep
+
+# Exports lourds / regenerables
+notebook/notebook/reports/tables/**
+notebook/notebook/reports/figures/**
+notebook/notebook/reports/figures_exploration/**
+notebook/notebook/reports/*.csv
+!notebook/notebook/reports/**/.gitkeep
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.env
+.env.*
+
+# Node / frontend
+App/node_modules/
+App/dist/
+App/dist-ssr/
+App/*.local
+App/api/.venv/
+
+# OS / IDE
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/extensions.json
+
+# Logs & caches
+*.log
+.ipynb_checkpoints/
+*.tmp
+*.bak
+
+# LaTeX auxiliaires (garder le .tex)
+document/*.aux
+document/*.log
+document/*.out
+document/*.toc
+document/*.synctex.gz
+document/*.fls
+document/*.fdb_latexmk
+document/*.bbl
+document/*.blg
+
+# Optionnel : PDF compilé (regénérable)
+# document/*.pdf
+
+# PDFs sources / m�moires compil�s (droits / poids)
+document/Sources/
+document/*.pdf
+!document/*.tex
+

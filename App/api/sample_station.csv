@@ -1,0 +1,16 @@
+﻿timestamp,phenomenon,value,unit,station_id,station_name
+2024-01-01T00:00:00Z,temperature,18.2,°C,my-pws-01,Ma station
+2024-01-01T00:10:00Z,temperature,18.3,°C,my-pws-01,Ma station
+2024-01-01T00:20:00Z,temperature,18.1,°C,my-pws-01,Ma station
+2024-01-01T00:30:00Z,temperature,18.4,°C,my-pws-01,Ma station
+2024-01-01T00:40:00Z,temperature,45.0,°C,my-pws-01,Ma station
+2024-01-01T00:50:00Z,humidity,55,%,my-pws-01,Ma station
+2024-01-01T01:00:00Z,humidity,56,%,my-pws-01,Ma station
+2024-01-01T01:10:00Z,humidity,54,%,my-pws-01,Ma station
+2024-01-01T01:20:00Z,humidity,55,%,my-pws-01,Ma station
+2024-01-01T01:30:00Z,humidity,120,%,my-pws-01,Ma station
+2024-01-01T01:40:00Z,pressure,1013,hPa,my-pws-01,Ma station
+2024-01-01T01:50:00Z,pressure,1012,hPa,my-pws-01,Ma station
+2024-01-01T02:00:00Z,pressure,1014,hPa,my-pws-01,Ma station
+2024-01-01T02:10:00Z,pressure,1013,hPa,my-pws-01,Ma station
+2024-01-01T02:20:00Z,pressure,1013,hPa,my-pws-01,Ma station
